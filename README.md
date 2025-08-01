@@ -24,19 +24,19 @@ npm install -g ai-linter-cli
 
 ```bash
 # Review a specific PR
-ai-linter --owner myorg --repo myrepo --pr 123
+ai-linter --repo-owner myorg --repo-name myrepo --pr 123
 
 # Review with custom style guidelines
-ai-linter --owner myorg --repo myrepo --pr 123 --rules ./docs/STYLE-GUIDE.md
+ai-linter --repo-owner myorg --repo-name myrepo --pr 123 --rules ./docs/STYLE-GUIDE.md
 
 # Review with a specific model (default: o4-mini)
-ai-linter --owner myorg --repo myrepo --pr 123 --model o1-preview
+ai-linter --repo-owner myorg --repo-name myrepo --pr 123 --model o1-preview
 
 # Dry run (show what would be reviewed)
-ai-linter --owner myorg --repo myrepo --pr 123 --dry-run
+ai-linter --repo-owner myorg --repo-name myrepo --pr 123 --dry-run
 
 # Verbose output
-ai-linter --owner myorg --repo myrepo --pr 123 --verbose
+ai-linter --repo-owner myorg --repo-name myrepo --pr 123 --verbose
 ```
 
 ### GitHub Actions (Recommended)
@@ -127,8 +127,8 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           ai-linter \
-            --repoOwner ${{ github.repository_owner }} \
-            --repoName ${{ github.event.repository.name }} \
+            --repo-owner ${{ github.repository_owner }} \
+            --repo-name ${{ github.event.repository.name }} \
             --pr ${{ github.event.pull_request.number }} \
             --base=${{ github.base_ref }} \
             --head=${{ github.head_ref }} 
