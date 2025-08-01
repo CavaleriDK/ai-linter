@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "bin": {
-    "ai-linter": "./bin/index.js"
+    "ai-linter": "bin/index.js"
   },
   "scripts": {
     "lint": "eslint .",
