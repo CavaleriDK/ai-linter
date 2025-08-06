@@ -2,7 +2,7 @@ export function generateCodexPrompt(rulesPath, prInfo, canUseRequestChanges) {
   const prompt = `You are an AI code linter reviewing a Pull Request. 
 
 Now, perform the following tasks in order:
-  1. Create a new pending PR review with the Github MCP tool "create_pending_pull_request_review".
+  1. Create a new pending PR review with the Github MCP tool "create_pending_pull_request_review" or use your existing pending review if it exists.
   2. Analyze the style guidelines, then assert if the PR is a small or a large change.
   3. Analyze the PR changes and report each style violation using the Github MCP tool "add_comment_to_pending_review".
   4. Submit the PR review using the Github MCP tool "submit_pending_pull_request_review" by setting the event to ${canUseRequestChanges ? '"REQUEST_CHANGES" if any issues are found, or "COMMENT" if no issues are found.' : 'COMMENT.'}

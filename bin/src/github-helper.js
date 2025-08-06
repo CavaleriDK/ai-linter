@@ -14,6 +14,7 @@ export class GithubHelper {
   }
 
   async removeAllPendingReviewsFromTool(repoOwner, repoName, prNumber) {
+    return;
     const pendingReviews = await this.#getPendingReviewsFromTool(repoOwner, repoName, prNumber);
 
     if (pendingReviews.length === 0) {
@@ -88,43 +89,30 @@ export class GithubHelper {
   async #tryGetBotIdentity() {
     try {
       const installationId = process.env.AI_LINTER_APP_INSTALLATION_ID;
-      console.log(`tryGetBotIdentity: Using installation ID from env: ${installationId}`);
+      const botId = process.env.AI_LINTER_BOT_ID;
+      const botLogin = process.env.AI_LINTER_BOT_LOGIN;
+      const botName = process.env.AI_LINTER_BOT_NAME;
+      
+      console.log(`tryGetBotIdentity: Env vars - installationId: ${installationId}, botId: ${botId}, botLogin: ${botLogin}, botName: ${botName}`);
 
       if (!installationId) {
-        console.log('tryGetBotIdentity: No AI_LINTER_APP_INSTALLATION_ID env var found');
+        console.log('tryGetBotIdentity: Missing AI_LINTER_APP_INSTALLATION_ID env var');
         return null;
       }
 
-      const { data: installation } = await this.octokit.rest.apps.getInstallation({
-        installation_id: parseInt(installationId)
-      });
-      console.log('tryGetBotIdentity: Installation data:', JSON.stringify(installation, null, 2));
-
-      const app = installation.app;
-      const botLogin = `${app.slug}[bot]`;
-      console.log(`tryGetBotIdentity: Bot login: ${botLogin}`);
-
-      try {
-        const { data: botUser } = await this.octokit.rest.users.getByUsername({
-          username: botLogin
-        });
-        console.log('tryGetBotIdentity: Found bot user:', JSON.stringify(botUser, null, 2));
-
+      // If we have bot info from workflow, use it directly
+      if (botId && botLogin) {
+        console.log('tryGetBotIdentity: Using bot info from workflow environment variables');
         return {
           type: 'bot',
-          id: botUser.id,
-          login: botUser.login,
-          name: botUser.name || app.name
-        };
-      } catch (userError) {
-        console.log('tryGetBotIdentity: Could not fetch bot user, using fallback. Error:', userError.message);
-        return {
-          type: 'bot',
-          id: app.id,
+          id: parseInt(botId),
           login: botLogin,
-          name: app.name
+          name: botName || botLogin
         };
       }
+
+      console.log('tryGetBotIdentity: Bot info not available from workflow, cannot determine bot identity');
+      return null;
 
     } catch (error) {
       console.log('tryGetBotIdentity: Error getting bot identity:', error.message);
