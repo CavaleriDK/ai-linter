@@ -56,17 +56,75 @@ export class GithubHelper {
     if (this.#currentIdentity)
       return this.#currentIdentity;
 
+    const identity = await this.#tryGetUserIdentity() ||
+      await this.#tryGetAppIdentity() ||
+      await this.#tryGetBotIdentity();
+
+    if (!identity)
+      throw new Error('Unable to determine authentication identity');
+
+    this.#currentIdentity = identity;
+    return this.#currentIdentity;
+  }
+
+  async #tryGetUserIdentity() {
+    try {
+      const { data: user } = await this.octokit.rest.users.getAuthenticated();
+      return { type: 'user', ...user };
+    } catch {
+      return null;
+    }
+  }
+
+  async #tryGetAppIdentity() {
     try {
       const { data: app } = await this.octokit.rest.apps.getAuthenticated();
-      this.#currentIdentity = { type: 'app', id: app.id, login: app.slug, name: app.name };
-
-      return this.#currentIdentity;
+      return { type: 'app', id: app.id, login: app.slug, name: app.name };
     } catch {
-      const { data: user } = await this.octokit.rest.users.getAuthenticated();
-      this.#currentIdentity = { type: 'user', ...user };
-
-      return this.#currentIdentity;
+      return null;
     }
+  }
+
+  async #tryGetBotIdentity() {
+    try {
+      const installationId = await this.#getInstallationId();
+      if (!installationId)
+        return null;
+
+      const { data: installation } = await this.octokit.rest.apps.getInstallation({
+        installation_id: installationId
+      });
+
+      const botLogin = `${installation.app_slug}[bot]`;
+      const botId = installation.app_id + 100000;
+
+      return {
+        type: 'bot',
+        id: botId,
+        login: botLogin,
+        name: installation.app_slug
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async #getInstallationId() {
+    try {
+      const authHeader = this.octokit.request.defaults.headers.authorization;
+      if (authHeader && authHeader.includes('installation')) {
+        const match = authHeader.match(/installation\/(\d+)/);
+        if (match) return parseInt(match[1]);
+      }
+
+      const { data } = await this.octokit.rest.apps.listReposAccessibleToInstallation({ per_page: 1 });
+      if (data.repositories && data.repositories.length > 0)
+        return data.installation_id;
+
+    } catch {
+      return null;
+    }
+    return null;
   }
 
   #filterReviewsByIdentity(reviews, currentIdentity) {
@@ -77,6 +135,13 @@ export class GithubHelper {
         review.user.id === currentIdentity.id ||
         review.user.login === currentIdentity.login ||
         review.user.type === 'Bot'
+      );
+    }
+
+    if (currentIdentity.type === 'bot') {
+      return pendingReviews.filter(review =>
+        review.user.login === currentIdentity.login ||
+        (review.user.type === 'Bot' && review.user.login.includes(currentIdentity.name))
       );
     }
 
