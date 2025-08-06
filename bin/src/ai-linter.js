@@ -64,8 +64,6 @@ export class AILinter {
       const rulesPath = await this.findRulesFile();
       const prInfo = await this.getPRInfo();
 
-      await this.#removeAllPendingReviewsFromTool();
-
       const canUseRequestChanges = await this.#canUseRequestChanges(prInfo);
 
       this.log(`Working directory: ${this.options.workingDir}`, 'debug');
@@ -153,23 +151,6 @@ export class AILinter {
     };
   }
 
-  async #removeAllPendingReviewsFromTool() {
-    const spinner = ora(`Identifying and removing pending reviews for PR #${this.options.prNumber} from this tool...`).start();
-
-    try {
-      await this.githubHelper.removeAllPendingReviewsFromTool(
-        this.options.repoOwner,
-        this.options.repoName,
-        this.options.prNumber
-      );
-
-      spinner.succeed(`Pending reviews cleaned up for PR #${this.options.prNumber}`);
-    } catch (error) {
-      spinner.fail(`Failed to remove pending reviews for PR #${this.options.prNumber}: ${error.message}`);
-      throw error;
-    }
-  }
-
   async #canUseRequestChanges(prInfo) {
     const spinner = ora('Checking PR permissions...').start();
 
@@ -229,8 +210,6 @@ export class AILinter {
         '--full-auto',
         '--skip-git-repo-check',
         '--model', this.options.model,
-        '--config', 'model_providers.openai.name="OpenAI"',
-        '--config', 'wire_api="responses"',
         '--config', `mcp_servers.github.command="${githubMCPPath}"`,
         '--config', 'mcp_servers.github.args=["stdio"]',
         '--config', `mcp_servers.github.env={GITHUB_PERSONAL_ACCESS_TOKEN="${githubToken}"}`,

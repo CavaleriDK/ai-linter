@@ -151,7 +151,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          AI_LINTER_APP_INSTALLATION_ID: ${{ secrets.AI_LINTER_APP_INSTALLATION_ID }}
         run: |
           ai-linter \
             --repo-owner ${{ github.repository_owner }} \
