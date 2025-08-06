@@ -7,13 +7,11 @@ import simpleGit from 'simple-git';
 import { fileURLToPath } from 'url';
 import { defaultStyleRules } from './default-style-rules.js';
 import { generateCodexPrompt } from './generate-codex-prompt.js';
-import { getGitHubOwner, getGitHubRepoName } from './git-helper.js';
+import { GithubHelper } from './github-helper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// @TODO: Make sure to find the right repository owner!
-// PR review comments now fail sometimes :(
 export class AILinter {
   constructor(options = {}) {
     this.options = {
@@ -21,15 +19,20 @@ export class AILinter {
       prNumber: options.prNumber,
       baseRef: options.baseRef || 'main',
       headRef: options.headRef,
-      repoOwner: options.repoOwner || getGitHubOwner(process.cwd()),
-      repoName: options.repoName || getGitHubRepoName(process.cwd()),
+      repoOwner: options.repoOwner || GithubHelper.getGitHubOwner(process.cwd()),
+      repoName: options.repoName || GithubHelper.getRepoName(process.cwd()),
       workingDir: process.cwd(),
       verbose: options.verbose || false,
       dryRun: options.dryRun || false,
       model: options.model || 'o4-mini'
     };
+
     this.log(`Working directory: ${this.options.workingDir}`, 'debug');
     this.git = simpleGit(this.options.workingDir);
+
+    this.checkDependencies();
+
+    this.githubHelper = new GithubHelper();
   }
 
   log(message, type = 'info') {
@@ -47,25 +50,44 @@ export class AILinter {
   }
 
   checkDependencies() {
-    const spinner = ora('Checking dependencies...').start();
-
     if (!process.env.OPENAI_API_KEY) {
-      spinner.fail('OpenAI API key not found');
       this.log('Please set your OpenAI API key:', 'error');
       this.log('  export OPENAI_API_KEY="your-api-key-here"', 'info');
       process.exit(1);
     }
 
     if (!process.env.GITHUB_TOKEN && !process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
-      spinner.fail('GitHub token not found');
       this.log('Set either GITHUB_TOKEN (for GitHub App) or GITHUB_PERSONAL_ACCESS_TOKEN:', 'error');
       this.log('  export GITHUB_TOKEN="your-github-app-token"', 'info');
       this.log('  OR', 'info');
       this.log('  export GITHUB_PERSONAL_ACCESS_TOKEN="your-personal-access-token"', 'info');
       process.exit(1);
     }
+  }
 
-    spinner.succeed('Codex Dependencies verified');
+  async run() {
+    try {
+      this.log('🤖 - Powered by OpenAI Codex', 'info');
+
+      const rulesPath = await this.findRulesFile();
+      const prInfo = await this.getPRInfo();
+
+      await this.#removeAllPendingReviewsFromTool();
+
+      const canUseRequestChanges = await this.#canUseRequestChanges(prInfo);
+
+      this.log(`Working directory: ${this.options.workingDir}`, 'debug');
+      this.log(`Rules file: ${rulesPath}`, 'debug');
+      this.log(`PR info: ${JSON.stringify(prInfo)}`, 'debug');
+      this.log(`Can use request changes: ${canUseRequestChanges}`, 'debug');
+
+      await this.runCodexReview(rulesPath, prInfo, canUseRequestChanges);
+
+    } catch (error) {
+      this.log(`Error: ${error.message}`, 'error');
+      this.log(error.stack, 'debug');
+      process.exit(1);
+    }
   }
 
   async findRulesFile() {
@@ -78,7 +100,6 @@ export class AILinter {
       return rulesPath;
     }
 
-    // Try common locations
     const commonPaths = [
       path.join(this.options.workingDir, 'docs', this.options.rules),
       path.join(this.options.workingDir, '.github', this.options.rules),
@@ -140,11 +161,42 @@ export class AILinter {
     };
   }
 
-  async runCodexReview(rulesPath, prInfo) {
+  async #removeAllPendingReviewsFromTool() {
+    const spinner = ora(`Identifying and removing pending reviews for PR #${this.options.prNumber} from this tool...`).start();
+
+    try {
+      await this.githubHelper.removeAllPendingReviewsFromTool(
+        this.options.repoOwner,
+        this.options.repoName,
+        this.options.prNumber
+      );
+
+      spinner.succeed(`Pending reviews cleaned up for PR #${this.options.prNumber}`);
+    } catch (error) {
+      spinner.fail(`Failed to remove pending reviews for PR #${this.options.prNumber}: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async #canUseRequestChanges(prInfo) {
+    const spinner = ora('Checking PR permissions...').start();
+
+    const canUseRequestChanges = await this.githubHelper.canUseRequestChanges(
+      this.options.repoOwner,
+      this.options.repoName,
+      prInfo.prNumber
+    );
+
+    spinner.succeed(`Can use request changes: ${canUseRequestChanges}`);
+
+    return canUseRequestChanges;
+  }
+
+  async runCodexReview(rulesPath, prInfo, canUseRequestChanges) {
     const spinner = ora('Running Codex AI review...').start();
 
     try {
-      const prompt = generateCodexPrompt(rulesPath, prInfo);
+      const prompt = generateCodexPrompt(rulesPath, prInfo, canUseRequestChanges);
 
       if (this.options.dryRun) {
         spinner.succeed('Dry run - would execute Codex with prompt:');
@@ -164,13 +216,31 @@ export class AILinter {
       );
 
       const githubToken = process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+
+      // Use locally built GitHub MCP server
+      const githubMCPPath = path.resolve(
+        path.dirname(path.dirname(__dirname)),
+        'bin',
+        'github-mcp',
+        process.platform === 'win32' ? 'github-mcp-server.exe' : 'github-mcp-server'
+      );
+
+      // Check if GitHub MCP server is built
+      if (!await fs.pathExists(githubMCPPath)) {
+        this.log(`GitHub MCP Server not found at: ${  githubMCPPath}`, 'error');
+        this.log('Please run: npm run build:github-mcp', 'info');
+        process.exit(1);
+      }
+
       const codexArgs = [
         'exec',
         '--full-auto',
         '--skip-git-repo-check',
         '--model', this.options.model,
-        '--config', 'mcp_servers.github.command="npx"',
-        '--config', 'mcp_servers.github.args=["-y", "@modelcontextprotocol/server-github"]',
+        '--config', 'model_providers.openai.name="OpenAI"',
+        '--config', 'wire_api="responses"',
+        '--config', `mcp_servers.github.command="${githubMCPPath}"`,
+        '--config', 'mcp_servers.github.args=["stdio"]',
         '--config', `mcp_servers.github.env={GITHUB_PERSONAL_ACCESS_TOKEN="${githubToken}"}`,
         '--',
         prompt
@@ -178,7 +248,6 @@ export class AILinter {
 
       this.log(`Running: codex ${codexArgs.join(' ')}`, 'debug');
 
-      // Stop the spinner before spawning the process to avoid output conflicts
       spinner.stop();
       this.log('Starting Codex review...', 'info');
 
@@ -200,7 +269,6 @@ export class AILinter {
         process.on('SIGTERM', cleanup);
 
         codexProcess.on('close', (code, signal) => {
-          // Remove signal handlers after process ends
           process.removeListener('SIGINT', cleanup);
           process.removeListener('SIGTERM', cleanup);
 
@@ -217,7 +285,6 @@ export class AILinter {
         });
 
         codexProcess.on('error', (error) => {
-          // Remove signal handlers on error
           process.removeListener('SIGINT', cleanup);
           process.removeListener('SIGTERM', cleanup);
 
@@ -228,28 +295,6 @@ export class AILinter {
     } catch (error) {
       this.log(`Error running Codex review: ${error.message}`, 'error');
       throw error;
-    }
-  }
-
-  async run() {
-    try {
-      this.log('🤖 - Powered by OpenAI Codex', 'info');
-
-      await this.checkDependencies();
-
-      const rulesPath = await this.findRulesFile();
-      const prInfo = await this.getPRInfo();
-
-      this.log(`Working directory: ${this.options.workingDir}`, 'debug');
-      this.log(`Rules file: ${rulesPath}`, 'debug');
-      this.log(`PR info: ${JSON.stringify(prInfo)}`, 'debug');
-
-      await this.runCodexReview(rulesPath, prInfo);
-
-    } catch (error) {
-      this.log(`Error: ${error.message}`, 'error');
-      this.log(error.stack, 'debug');
-      process.exit(1);
     }
   }
 }
