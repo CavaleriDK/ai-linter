@@ -88,13 +88,14 @@ export class GithubHelper {
   async #tryGetBotIdentity() {
     try {
       const installationId = await this.#getInstallationId();
+      console.log(`Installation ID: ${installationId}`);
       if (!installationId)
         return null;
 
       const { data: installation } = await this.octokit.rest.apps.getInstallation({
         installation_id: installationId
       });
-
+      console.log(`Installation data: ${JSON.stringify(installation, null, 2)}`);
       const botLogin = `${installation.app_slug}[bot]`;
       const botId = installation.app_id + 100000;
 
@@ -112,12 +113,14 @@ export class GithubHelper {
   async #getInstallationId() {
     try {
       const authHeader = this.octokit.request.defaults.headers.authorization;
+      console.log(`Auth header: ${authHeader}`);
       if (authHeader && authHeader.includes('installation')) {
         const match = authHeader.match(/installation\/(\d+)/);
         if (match) return parseInt(match[1]);
       }
 
       const { data } = await this.octokit.rest.apps.listReposAccessibleToInstallation({ per_page: 1 });
+      console.log(`Repositories accessible to installation: ${JSON.stringify(data, null, 2)}`);
       if (data.repositories && data.repositories.length > 0)
         return data.installation_id;
 
