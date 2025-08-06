@@ -1,6 +1,7 @@
 import path from 'path';
 import { execSync } from 'child_process';
 import { Octokit } from 'octokit';
+import { Logger } from './logger.js';
 
 export class GithubHelper {
   #currentIdentity = null;
@@ -16,11 +17,11 @@ export class GithubHelper {
     const pendingReviews = await this.#getPendingReviewsFromTool(repoOwner, repoName, prNumber);
 
     if (pendingReviews.length === 0) {
-      console.log('No pending reviews to clean up');
-      return 0;
+      Logger.debug('No pending reviews to clean up');
+      return;
     }
 
-    console.log(`Cleaning up ${pendingReviews.length} pending review(s)...`);
+    Logger.info(`Cleaning up ${pendingReviews.length} pending review(s)...`);
 
     const results = await Promise.allSettled(
       pendingReviews.map(review =>
@@ -32,8 +33,7 @@ export class GithubHelper {
       result.status === 'fulfilled' && result.value
     ).length;
 
-    console.log(`Successfully cleaned up ${successful}/${pendingReviews.length} pending review(s)`);
-    return successful;
+    Logger.info(`Successfully cleaned up ${successful}/${pendingReviews.length} pending review(s)`);
   }
 
   async #getPendingReviewsFromTool(repoOwner, repoName, prNumber) {
@@ -48,7 +48,7 @@ export class GithubHelper {
 
     const pendingReviews = this.#filterReviewsByIdentity(reviewsResponse.data, currentIdentity);
 
-    console.log(`Found ${pendingReviews.length} pending review(s) by ${currentIdentity.login}`);
+    Logger.debug(`Found ${pendingReviews.length} pending review(s) by ${currentIdentity.login}`);
     return pendingReviews;
   }
 
@@ -92,10 +92,10 @@ export class GithubHelper {
         review_id: reviewId
       });
 
-      console.log(`Deleted pending review ${reviewId}`);
+      Logger.debug(`Deleted pending review ${reviewId}`);
       return true;
-    } catch (error) {
-      console.error(`Failed to delete review ${reviewId}:`, error.message);
+    } catch (err) {
+      Logger.error(`Failed to delete review ${reviewId}: ${err.message}`);
       return false;
     }
   }
@@ -120,8 +120,8 @@ export class GithubHelper {
         return this.#canAppRequestChanges(repoOwner, repoName, prAuthor);
 
       return prAuthor.id !== currentIdentity.id;
-    } catch (error) {
-      console.error('Error checking PR permissions:', error);
+    } catch (err) {
+      Logger.error(`Error checking PR permissions: ${err.message}`);
       return false;
     }
   }
@@ -143,7 +143,7 @@ export class GithubHelper {
 
       return false;
     } catch (installationError) {
-      console.warn('Could not determine app installation context:', installationError.message);
+      Logger.warning(`Could not determine app installation context: ${installationError.message}`);
       return false;
     }
   }

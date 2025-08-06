@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import ora from 'ora';
 import path from 'path';
 import fs from 'fs-extra';
@@ -8,12 +7,15 @@ import { fileURLToPath } from 'url';
 import { defaultStyleRules } from './default-style-rules.js';
 import { generateCodexPrompt } from './generate-codex-prompt.js';
 import { GithubHelper } from './github-helper.js';
+import { Logger } from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export class AILinter {
   constructor(options = {}) {
+    Logger.setVerbose(options.verbose || false);
+
     this.options = {
       rules: options.rules || 'STYLE-GUIDELINES.md',
       prNumber: options.prNumber,
@@ -27,7 +29,7 @@ export class AILinter {
       model: options.model || 'o4-mini'
     };
 
-    this.log(`Working directory: ${this.options.workingDir}`, 'debug');
+    Logger.debug(`Working directory: ${this.options.workingDir}`);
     this.git = simpleGit(this.options.workingDir);
 
     this.checkDependencies();
@@ -36,17 +38,7 @@ export class AILinter {
   }
 
   log(message, type = 'info') {
-    if (!this.options.verbose && type === 'debug') return;
-
-    const colors = {
-      info: chalk.blue,
-      success: chalk.green,
-      warning: chalk.yellow,
-      error: chalk.red,
-      debug: chalk.gray
-    };
-
-    console.log(colors[type](`[AI-Linter] ${message}`));
+    Logger.log(message, type);
   }
 
   checkDependencies() {
