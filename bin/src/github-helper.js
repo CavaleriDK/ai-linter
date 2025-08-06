@@ -52,13 +52,13 @@ export class GithubHelper {
     return pendingReviews;
   }
 
-  async #getCurrentIdentity(owner, repo) {
+  async #getCurrentIdentity() {
     if (this.#currentIdentity)
       return this.#currentIdentity;
 
     const identity = await this.#tryGetUserIdentity() ||
       await this.#tryGetAppIdentity() ||
-      await this.#tryGetBotIdentity(owner, repo);
+      await this.#tryGetBotIdentity();
 
     if (!identity)
       throw new Error('Unable to determine authentication identity');
@@ -85,29 +85,31 @@ export class GithubHelper {
     }
   }
 
-  async #tryGetBotIdentity(owner, repo) {
+  async #tryGetBotIdentity() {
     try {
-      console.log(`tryGetBotIdentity: Getting installation ID for owner=${owner}, repo=${repo}`);
-      const installationId = await this.#getInstallationId(owner, repo);
-      console.log(`tryGetBotIdentity: Installation ID: ${installationId}`);
-      if (!installationId) return null;
+      const installationId = process.env.AI_LINTER_APP_INSTALLATION_ID;
+      console.log(`tryGetBotIdentity: Using installation ID from env: ${installationId}`);
+
+      if (!installationId) {
+        console.log('tryGetBotIdentity: No AI_LINTER_APP_INSTALLATION_ID env var found');
+        return null;
+      }
 
       const { data: installation } = await this.octokit.rest.apps.getInstallation({
-        installation_id: installationId
+        installation_id: parseInt(installationId)
       });
-      console.log(`tryGetBotIdentity: Installation data:`, JSON.stringify(installation, null, 2));
+      console.log('tryGetBotIdentity: Installation data:', JSON.stringify(installation, null, 2));
 
       const app = installation.app;
-      
       const botLogin = `${app.slug}[bot]`;
       console.log(`tryGetBotIdentity: Bot login: ${botLogin}`);
-      
+
       try {
         const { data: botUser } = await this.octokit.rest.users.getByUsername({
           username: botLogin
         });
-        console.log(`tryGetBotIdentity: Found bot user:`, JSON.stringify(botUser, null, 2));
-        
+        console.log('tryGetBotIdentity: Found bot user:', JSON.stringify(botUser, null, 2));
+
         return {
           type: 'bot',
           id: botUser.id,
@@ -115,7 +117,7 @@ export class GithubHelper {
           name: botUser.name || app.name
         };
       } catch (userError) {
-        console.log(`tryGetBotIdentity: Could not fetch bot user, using fallback. Error:`, userError.message);
+        console.log('tryGetBotIdentity: Could not fetch bot user, using fallback. Error:', userError.message);
         return {
           type: 'bot',
           id: app.id,
@@ -125,58 +127,12 @@ export class GithubHelper {
       }
 
     } catch (error) {
-      console.log(`tryGetBotIdentity: Error getting bot identity:`, error.message);
+      console.log('tryGetBotIdentity: Error getting bot identity:', error.message);
       Logger.error('Error getting bot identity:', error.message);
       return null;
     }
   }
 
-  async #getInstallationId(owner, repo) {
-    try {
-      console.log(`getInstallationId: Starting with owner=${owner}, repo=${repo}`);
-      
-      if (owner && repo) {
-        console.log(`getInstallationId: Trying method 1 - getRepoInstallation`);
-        try {
-          const { data: installation } = await this.octokit.rest.apps.getRepoInstallation({
-            owner: owner,
-            repo: repo
-          });
-          console.log(`getInstallationId: Method 1 successful, installation ID: ${installation.id}`);
-          return installation.id;
-        } catch (repoError) {
-          console.log(`getInstallationId: Method 1 failed:`, repoError.message);
-        }
-      }
-
-      console.log(`getInstallationId: Trying method 2 - listReposAccessibleToInstallation`);
-      const { data } = await this.octokit.rest.apps.listReposAccessibleToInstallation({ per_page: 1 });
-      console.log(`getInstallationId: Method 2 response:`, JSON.stringify(data, null, 2));
-      if (data.repositories && data.repositories.length > 0) {
-        console.log(`getInstallationId: Method 2 successful, installation ID: ${data.installation_id}`);
-        return data.installation_id;
-      }
-
-      console.log(`getInstallationId: Trying method 3 - parse from auth header`);
-      const authHeader = this.octokit.request.defaults.headers.authorization;
-      console.log(`getInstallationId: Auth header: ${authHeader}`);
-      if (authHeader && authHeader.includes('installation')) {
-        const match = authHeader.match(/installation\/(\d+)/);
-        if (match) {
-          const id = parseInt(match[1]);
-          console.log(`getInstallationId: Method 3 successful, installation ID: ${id}`);
-          return id;
-        }
-      }
-
-      console.log(`getInstallationId: All methods failed, returning null`);
-    } catch (error) {
-      console.log(`getInstallationId: Unexpected error:`, error.message);
-      Logger.error('Error getting installation ID:', error.message);
-      return null;
-    }
-    return null;
-  }
 
   #filterReviewsByIdentity(reviews, currentIdentity) {
     const pendingReviews = reviews.filter(review => review.state === 'PENDING');
