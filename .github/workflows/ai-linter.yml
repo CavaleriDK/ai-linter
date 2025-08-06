@@ -1,12 +1,8 @@
 name: AI Linter
 
 on:
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: 'Pull Request Number'
-        required: true
-        type: number
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -45,15 +41,6 @@ jobs:
           app-id: ${{ secrets.AI_LINTER_APP_ID }}
           private-key: ${{ secrets.AI_LINTER_PRIVATE_KEY }}
 
-      - name: Get PR Information
-        id: pr_info
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-        run: |
-          PR_DATA=$(gh pr view ${{ inputs.pr_number }} --json baseRefName,headRefName --repo ${{ github.repository }})
-          echo "base_ref=$(echo "$PR_DATA" | jq -r '.baseRefName')" >> $GITHUB_OUTPUT
-          echo "head_ref=$(echo "$PR_DATA" | jq -r '.headRefName')" >> $GITHUB_OUTPUT
-
       - name: Run AI Linter
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
@@ -62,6 +49,6 @@ jobs:
           ai-linter \
             --repo-owner ${{ github.repository_owner }} \
             --repo-name ${{ github.event.repository.name }} \
-            --pr ${{ inputs.pr_number }} \
-            --base=${{ steps.pr_info.outputs.base_ref }} \
-            --head=${{ steps.pr_info.outputs.head_ref }} 
+            --pr ${{ github.event.pull_request.number }} \
+            --base=${{ github.base_ref }} \
+            --head=${{ github.head_ref }} 
