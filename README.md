@@ -132,6 +132,14 @@ jobs:
       - name: Install AI Linter
         run: npm install -g ai-linter-cli
 
+      - name: Build GitHub MCP Server
+        run: |
+          # Find where ai-linter-cli was installed globally
+          cd $(npm root -g)/ai-linter-cli
+          
+          # Run the build script from the global installation
+          npm run build:github-mcp
+
       - name: Generate GitHub App Token
         id: generate_token
         uses: actions/create-github-app-token@v2

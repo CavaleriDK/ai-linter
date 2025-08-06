@@ -10,8 +10,7 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build:github-mcp": "node scripts/build-github-mcp.js",
-    "postinstall": "npm run build:github-mcp"
+    "build:github-mcp": "node scripts/build-github-mcp.js"
   },
   "engines": {
     "node": ">=22.0.0"
