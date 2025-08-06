@@ -1,6 +1,6 @@
 {
   "name": "ai-linter-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI-powered code linter using OpenAI Codex CLI with GitHub MCP integration",
   "main": "index.js",
   "type": "module",
