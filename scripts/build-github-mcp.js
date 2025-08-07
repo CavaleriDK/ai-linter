@@ -5,7 +5,6 @@ import { existsSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { Logger } from '../bin/src/logger';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,15 +25,15 @@ function checkGoInstalled() {
 }
 
 function buildGithubMCP() {
-  Logger.info('Building GitHub MCP Server...');
+  console.log('Building GitHub MCP Server...');
 
   if (!checkGoInstalled()) {
-    Logger.error('Go is not installed. Please install Go first: https://golang.org/dl/');
+    console.error('Go is not installed. Please install Go first: https://golang.org/dl/');
     process.exit(1);
   }
 
   if (existsSync(BUILD_DIR)) {
-    Logger.info('Cleaning previous build...');
+    console.log('Cleaning previous build...');
     rmSync(BUILD_DIR, { recursive: true, force: true });
   }
 
@@ -42,12 +41,12 @@ function buildGithubMCP() {
     mkdirSync(OUTPUT_DIR, { recursive: true });
 
   try {
-    Logger.info(`Cloning GitHub MCP Server ${GITHUB_MCP_VERSION}...`);
+    console.log(`Cloning GitHub MCP Server ${GITHUB_MCP_VERSION}...`);
     execSync(`git clone --depth 1 --branch ${GITHUB_MCP_VERSION} ${REPO_URL} "${BUILD_DIR}"`, {
       stdio: 'inherit'
     });
 
-    Logger.info('Building binary...');
+    console.log('Building binary...');
     const buildPath = join(BUILD_DIR, 'cmd', 'github-mcp-server');
     const outputPath = join(OUTPUT_DIR, BINARY_NAME);
 
@@ -59,14 +58,14 @@ function buildGithubMCP() {
     if (process.platform !== 'win32')
       execSync(`chmod +x "${outputPath}"`, { stdio: 'inherit' });
 
-    Logger.info('Cleaning up...');
+    console.log('Cleaning up...');
     rmSync(BUILD_DIR, { recursive: true, force: true });
 
-    Logger.info('GitHub MCP Server built successfully!');
-    Logger.info(`Binary location: ${outputPath}`);
+    console.log('GitHub MCP Server built successfully!');
+    console.log(`Binary location: ${outputPath}`);
 
   } catch (error) {
-    Logger.error('Build failed:', error.message);
+    console.error('Build failed:', error.message);
 
     if (existsSync(BUILD_DIR))
       rmSync(BUILD_DIR, { recursive: true, force: true });
