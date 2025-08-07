@@ -36,7 +36,15 @@ jobs:
           npm install
           npm install -g
 
+      - name: Cache GitHub MCP Server binary
+        id: cache-github-mcp
+        uses: actions/cache@v4
+        with:
+          path: $(npm root -g)/ai-linter-cli/bin/github-mcp
+          key: github-mcp-v0.10.0-${{ runner.os }}-${{ runner.arch }}
+
       - name: Build GitHub MCP Server
+        if: steps.cache-github-mcp.outputs.cache-hit != 'true'
         run: |
           cd $(npm root -g)/ai-linter-cli
           npm run build:github-mcp
