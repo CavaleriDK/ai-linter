@@ -32,52 +32,48 @@ export class AILinter {
     Logger.debug(`Working directory: ${this.options.workingDir}`);
     this.git = simpleGit(this.options.workingDir);
 
-    this.checkDependencies();
+    this.#checkDependencies();
 
     this.githubHelper = new GithubHelper();
   }
-
-  log(message, type = 'info') {
-    Logger.log(message, type);
-  }
-
-  checkDependencies() {
+  #checkDependencies() {
     if (!process.env.OPENAI_API_KEY) {
-      this.log('Please set your OpenAI API key:', 'error');
-      this.log('  export OPENAI_API_KEY="your-api-key-here"', 'info');
+      Logger.error('Please set your OpenAI API key:');
+      Logger.info('  export OPENAI_API_KEY="your-api-key-here"');
       process.exit(1);
     }
 
     if (!process.env.GITHUB_TOKEN && !process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
-      this.log('Set either GITHUB_TOKEN (for GitHub App) or GITHUB_PERSONAL_ACCESS_TOKEN:', 'error');
-      this.log('  export GITHUB_TOKEN="your-github-app-token"', 'info');
-      this.log('  OR', 'info');
-      this.log('  export GITHUB_PERSONAL_ACCESS_TOKEN="your-personal-access-token"', 'info');
+      Logger.error('Set either GITHUB_TOKEN (for GitHub App) or GITHUB_PERSONAL_ACCESS_TOKEN:');
+      Logger.info('  export GITHUB_TOKEN="your-github-app-token"');
+      Logger.info('  OR');
+      Logger.info('  export GITHUB_PERSONAL_ACCESS_TOKEN="your-personal-access-token"');
       process.exit(1);
     }
   }
+
 
   async run() {
     try {
-      this.log('🤖 - Powered by OpenAI Codex', 'info');
+      Logger.info('🤖 - Powered by OpenAI Codex');
 
-      const rulesPath = await this.findRulesFile();
-      const prInfo = await this.getPRInfo();
+      const rulesPath = await this.#findRulesFile();
+      const prInfo = await this.#getPRInfo();
 
-      this.log(`Working directory: ${this.options.workingDir}`, 'debug');
-      this.log(`Rules file: ${rulesPath}`, 'debug');
-      this.log(`PR info: ${JSON.stringify(prInfo)}`, 'debug');
+      Logger.debug(`Working directory: ${this.options.workingDir}`);
+      Logger.debug(`Rules file: ${rulesPath}`);
+      Logger.debug(`PR info: ${JSON.stringify(prInfo)}`);
 
-      await this.runCodexReview(rulesPath, prInfo);
+      await this.#runCodexReview(rulesPath, prInfo);
 
     } catch (error) {
-      this.log(`Error: ${error.message}`, 'error');
-      this.log(error.stack, 'debug');
+      Logger.error(`Error: ${error.message}`);
+      Logger.debug(error.stack);
       process.exit(1);
     }
   }
 
-  async findRulesFile() {
+  async #findRulesFile() {
     const spinner = ora(`Looking for rules file: ${this.options.rules}`).start();
 
     const rulesPath = path.resolve(this.options.workingDir, this.options.rules);
@@ -103,30 +99,30 @@ export class AILinter {
     }
 
     spinner.fail(`Rules file not found: ${this.options.rules}`);
-    this.log('Searched in:', 'warning');
-    commonPaths.forEach(p => this.log(`  ${p}`, 'debug'));
+    Logger.warning('Searched in:');
+    commonPaths.forEach(p => Logger.debug(`  ${p}`));
 
-    this.log('Creating a default STYLE-GUIDELINES.md file...', 'warning');
-    await this.createDefaultRulesFile();
+    Logger.warning('Creating a default STYLE-GUIDELINES.md file...');
+    await this.#createDefaultRulesFile();
 
     const defaultPath = path.join(this.options.workingDir, 'STYLE-GUIDELINES.md');
     return defaultPath;
   }
 
-  async createDefaultRulesFile() {
+  async #createDefaultRulesFile() {
     const defaultRules = defaultStyleRules;
 
     const filePath = path.join(this.options.workingDir, 'STYLE-GUIDELINES.md');
     await fs.writeFile(filePath, defaultRules);
-    this.log(`Created default rules file: ${filePath}`, 'success');
-    this.log('Please customize it for your project needs.', 'warning');
+    Logger.success(`Created default rules file: ${filePath}`);
+    Logger.warning('Please customize it for your project needs.');
   }
 
-  async getPRInfo() {
+  async #getPRInfo() {
     if (!this.options.prNumber) {
       try {
         const currentBranch = await this.git.revparse(['--abbrev-ref', 'HEAD']);
-        this.log(`Current branch: ${currentBranch}`, 'debug');
+        Logger.debug(`Current branch: ${currentBranch}`);
 
         if (process.env.GITHUB_REF && process.env.GITHUB_REF.startsWith('refs/pull/')) {
           this.options.prNumber = process.env.GITHUB_REF.match(/refs\/pull\/(\d+)/)[1];
@@ -134,7 +130,7 @@ export class AILinter {
           this.options.headRef = process.env.GITHUB_HEAD_REF || currentBranch;
         }
       } catch (error) {
-        this.log(`Could not auto-detect PR info: ${error.message}`, 'debug');
+        Logger.debug(`Could not auto-detect PR info: ${error.message}`);
         process.exit(1);
       }
     }
@@ -148,7 +144,7 @@ export class AILinter {
     };
   }
 
-  async runCodexReview(rulesPath, prInfo) {
+  async #runCodexReview(rulesPath, prInfo) {
     const spinner = ora('Running Codex AI review...').start();
 
     try {
@@ -156,9 +152,9 @@ export class AILinter {
 
       if (this.options.dryRun) {
         spinner.succeed('Dry run - would execute Codex with prompt:');
-        this.log('─'.repeat(50), 'info');
-        this.log(prompt, 'info');
-        this.log('─'.repeat(50), 'info');
+        Logger.info('─'.repeat(50));
+        Logger.info(prompt);
+        Logger.info('─'.repeat(50));
         return;
       }
 
@@ -181,8 +177,8 @@ export class AILinter {
       );
 
       if (!await fs.pathExists(githubMCPPath)) {
-        this.log(`GitHub MCP Server not found at: ${  githubMCPPath}`, 'error');
-        this.log('Please run: npm run build:github-mcp', 'info');
+        Logger.error(`GitHub MCP Server not found at: ${  githubMCPPath}`);
+        Logger.info('Please run: npm run build:github-mcp');
         process.exit(1);
       }
 
@@ -198,10 +194,10 @@ export class AILinter {
         prompt
       ];
 
-      this.log(`Running: codex ${codexArgs.join(' ')}`, 'debug');
+      Logger.debug(`Running: codex ${codexArgs.join(' ')}`);
 
       spinner.stop();
-      this.log('Starting Codex review...', 'info');
+      Logger.info('Starting Codex review...');
 
       return await new Promise((resolve, reject) => {
         const codexProcess = spawn(process.execPath, [codexBin, ...codexArgs], {
@@ -225,13 +221,13 @@ export class AILinter {
           process.removeListener('SIGTERM', cleanup);
 
           if (wasInterrupted || signal === 'SIGTERM' || signal === 'SIGINT') {
-            this.log('Codex review interrupted by user', 'warning');
+            Logger.warning('Codex review interrupted by user');
             reject(new Error('Process was interrupted'));
           } else if (code === 0) {
-            this.log('Codex review completed successfully', 'success');
+            Logger.success('Codex review completed successfully');
             resolve();
           } else {
-            this.log(`Codex review failed with exit code ${code}`, 'error');
+            Logger.error(`Codex review failed with exit code ${code}`);
             reject(new Error(`Codex exited with code ${code}`));
           }
         });
@@ -240,12 +236,12 @@ export class AILinter {
           process.removeListener('SIGINT', cleanup);
           process.removeListener('SIGTERM', cleanup);
 
-          this.log(`Failed to run Codex: ${error.message}`, 'error');
+          Logger.error(`Failed to run Codex: ${error.message}`);
           reject(error);
         });
       });
     } catch (error) {
-      this.log(`Error running Codex review: ${error.message}`, 'error');
+      Logger.error(`Error running Codex review: ${error.message}`);
       throw error;
     }
   }
