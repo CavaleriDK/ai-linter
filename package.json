@@ -1,6 +1,6 @@
 {
   "name": "ai-linter-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI-powered code linter using OpenAI Codex CLI with GitHub MCP integration",
   "main": "index.js",
   "type": "module",
@@ -9,7 +9,8 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "build:github-mcp": "node scripts/build-github-mcp.js"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -26,7 +27,7 @@
   "author": "Michael Cavaleri",
   "license": "MIT",
   "dependencies": {
-    "@openai/codex": "^0.10.0",
+    "@openai/codex": "^0.14.0",
     "chalk": "^5.4.1",
     "commander": "^14.0.0",
     "fs-extra": "^11.3.0",
@@ -46,6 +47,7 @@
   "homepage": "https://github.com/CavaleriDK/ai-linter#readme",
   "files": [
     "bin/",
+    "scripts/",
     "README.md",
     "LICENSE.md"
   ]
