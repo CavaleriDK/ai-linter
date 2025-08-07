@@ -64,14 +64,11 @@ export class AILinter {
       const rulesPath = await this.findRulesFile();
       const prInfo = await this.getPRInfo();
 
-      const canUseRequestChanges = await this.#canUseRequestChanges(prInfo);
-
       this.log(`Working directory: ${this.options.workingDir}`, 'debug');
       this.log(`Rules file: ${rulesPath}`, 'debug');
       this.log(`PR info: ${JSON.stringify(prInfo)}`, 'debug');
-      this.log(`Can use request changes: ${canUseRequestChanges}`, 'debug');
 
-      await this.runCodexReview(rulesPath, prInfo, canUseRequestChanges);
+      await this.runCodexReview(rulesPath, prInfo);
 
     } catch (error) {
       this.log(`Error: ${error.message}`, 'error');
@@ -151,25 +148,11 @@ export class AILinter {
     };
   }
 
-  async #canUseRequestChanges(prInfo) {
-    const spinner = ora('Checking PR permissions...').start();
-
-    const canUseRequestChanges = await this.githubHelper.canUseRequestChanges(
-      this.options.repoOwner,
-      this.options.repoName,
-      prInfo.prNumber
-    );
-
-    spinner.succeed(`Can use request changes: ${canUseRequestChanges}`);
-
-    return canUseRequestChanges;
-  }
-
-  async runCodexReview(rulesPath, prInfo, canUseRequestChanges) {
+  async runCodexReview(rulesPath, prInfo) {
     const spinner = ora('Running Codex AI review...').start();
 
     try {
-      const prompt = generateCodexPrompt(rulesPath, prInfo, canUseRequestChanges);
+      const prompt = generateCodexPrompt(rulesPath, prInfo);
 
       if (this.options.dryRun) {
         spinner.succeed('Dry run - would execute Codex with prompt:');
@@ -190,7 +173,6 @@ export class AILinter {
 
       const githubToken = process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 
-      // Use locally built GitHub MCP server
       const githubMCPPath = path.resolve(
         path.dirname(path.dirname(__dirname)),
         'bin',
@@ -198,7 +180,6 @@ export class AILinter {
         process.platform === 'win32' ? 'github-mcp-server.exe' : 'github-mcp-server'
       );
 
-      // Check if GitHub MCP server is built
       if (!await fs.pathExists(githubMCPPath)) {
         this.log(`GitHub MCP Server not found at: ${  githubMCPPath}`, 'error');
         this.log('Please run: npm run build:github-mcp', 'info');
