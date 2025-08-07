@@ -14,6 +14,20 @@ export class GithubHelper {
     return owner;
   }
 
+  static #getRemoteOriginUrl(repoPath) {
+    try {
+      const cwd = path.resolve(repoPath);
+      const remoteUrl = execSync('git config --get remote.origin.url', {
+        cwd,
+        encoding: 'utf8'
+      }).trim();
+
+      return remoteUrl || null;
+    } catch {
+      return null;
+    }
+  }
+
   static #parseOwnerFromUrl(url) {
     let match;
 
@@ -30,20 +44,6 @@ export class GithubHelper {
     }
 
     return null;
-  }
-
-  static #getRemoteOriginUrl(repoPath) {
-    try {
-      const cwd = path.resolve(repoPath);
-      const remoteUrl = execSync('git config --get remote.origin.url', {
-        cwd,
-        encoding: 'utf8'
-      }).trim();
-
-      return remoteUrl || null;
-    } catch {
-      return null;
-    }
   }
 
   static getRepoName(repoPath) {

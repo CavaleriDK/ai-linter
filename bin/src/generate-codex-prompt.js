@@ -3,7 +3,7 @@ export function generateCodexPrompt(rulesPath, prInfo) {
 
 Now, perform the following tasks in order:
   1. Create a new pending PR review with the Github MCP tool "create_pending_pull_request_review" or use your existing pending review if it exists.
-  2. Analyze the style guidelines, then assert if the PR is a small or a large change.
+  2. Analyze the style guidelines.
   3. Analyze the PR changes and add each style violation using the Github MCP tool "add_comment_to_pending_review". Add each violation when you find it, do not wait until the end.
   4. Submit the PR review using the Github MCP tool "submit_pending_pull_request_review" by setting the event to "REQUEST_CHANGES" if any issues are found, or "COMMENT" if no issues are found. If you cannot use the "REQUEST_CHANGES" event, use the "COMMENT" event instead.
 

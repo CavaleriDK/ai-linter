@@ -36,6 +36,7 @@ export class AILinter {
 
     this.githubHelper = new GithubHelper();
   }
+
   #checkDependencies() {
     if (!process.env.OPENAI_API_KEY) {
       Logger.error('Please set your OpenAI API key:');
@@ -51,7 +52,6 @@ export class AILinter {
       process.exit(1);
     }
   }
-
 
   async run() {
     try {
