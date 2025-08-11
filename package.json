@@ -1,6 +1,6 @@
 {
   "name": "ai-linter-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "AI-powered code linter using OpenAI Codex CLI with GitHub MCP integration",
   "main": "index.js",
   "type": "module",
@@ -46,7 +46,8 @@
   },
   "homepage": "https://github.com/CavaleriDK/ai-linter#readme",
   "files": [
-    "bin/",
+    "bin/src/",
+    "bin/index.js",
     "scripts/",
     "README.md",
     "LICENSE.md"
