@@ -245,4 +245,14 @@ export class AILinter {
       throw error;
     }
   }
+
+  demoFunction() {
+    //. This is a demo function
+    console.log("show me stuff");
+    let AFunnyStore = {};
+    AFunnyStore.getFunnyStuff = function() {
+      return "Here's some funny stuff!";
+    };
+    console.log(AFunnyStore.getFunnyStuff());
+  }
 }
