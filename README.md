@@ -17,7 +17,6 @@ AI-powered code linter using OpenAI Codex CLI with GitHub MCP integration for in
 ### Prerequisites
 
 - Node.js 22+
-- Go 1.24+ (for building GitHub MCP Server)
 
 ### Install
 
@@ -25,7 +24,7 @@ AI-powered code linter using OpenAI Codex CLI with GitHub MCP integration for in
 npm install -g ai-linter-cli
 ```
 
-After installation, you need to install OpenAI Codex globally and build the GitHub MCP Server:
+After installation, you need to install OpenAI Codex globally:
 
 ```bash
 # Navigate to the global installation directory
@@ -33,9 +32,6 @@ cd $(npm root -g)/ai-linter-cli
 
 # Install OpenAI Codex globally
 npm run install:codex
-
-# Build GitHub MCP Server
-npm run build:github-mcp
 ```
 
 ## Usage
@@ -135,11 +131,6 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-
       - name: Install AI Linter
         run: npm install -g ai-linter-cli
 
@@ -147,11 +138,6 @@ jobs:
         run: |
           cd $(npm root -g)/ai-linter-cli
           npm run install:codex
-
-      - name: Build GitHub MCP Server
-        run: |
-          cd $(npm root -g)/ai-linter-cli
-          npm run build:github-mcp
 
       - name: Generate GitHub App Token
         id: generate_token

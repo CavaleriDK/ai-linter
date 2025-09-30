@@ -1,7 +1,7 @@
 import ora from 'ora';
 import path from 'path';
 import fs from 'fs-extra';
-import { spawn, execSync } from 'child_process';
+import { spawn } from 'child_process';
 import simpleGit from 'simple-git';
 import { fileURLToPath } from 'url';
 import { defaultStyleRules } from './default-style-rules.js';
@@ -212,37 +212,14 @@ export class AILinter {
 
       const githubToken = process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 
-      // Find the global installation path of ai-linter-cli
-      let globalPackagePath;
-      try {
-        const npmRoot = execSync('npm root -g', { encoding: 'utf8' }).trim();
-        globalPackagePath = path.join(npmRoot, 'ai-linter-cli');
-      } catch (error) {
-        // Fallback to relative path if npm root fails
-        globalPackagePath = path.dirname(path.dirname(__dirname));
-      }
-
-      const githubMCPPath = path.join(
-        globalPackagePath,
-        'bin',
-        'github-mcp',
-        process.platform === 'win32' ? 'github-mcp-server.exe' : 'github-mcp-server'
-      );
-
-      if (!await fs.pathExists(githubMCPPath)) {
-        Logger.error(`GitHub MCP Server not found at: ${  githubMCPPath}`);
-        Logger.info('Please run: npm run build:github-mcp');
-        process.exit(1);
-      }
-
       const codexArgs = [
         'exec',
         '--full-auto',
         '--skip-git-repo-check',
         '--model', this.options.model,
-        '--config', `mcp_servers.github.command="${githubMCPPath}"`,
-        '--config', 'mcp_servers.github.args=["stdio"]',
-        '--config', `mcp_servers.github.env={GITHUB_PERSONAL_ACCESS_TOKEN="${githubToken}"}`,
+        '--config', 'experimental_use_rmcp_client=true',
+        '--config', 'mcp_servers.github.url="https://api.githubcopilot.com/mcp/"',
+        '--config', `mcp_servers.github.bearer_token="${githubToken}"`,
         '--',
         prompt
       ];
