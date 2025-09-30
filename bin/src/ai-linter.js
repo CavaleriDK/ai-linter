@@ -212,19 +212,29 @@ export class AILinter {
 
       const githubToken = process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 
+      // Create a temporary config file for this run
+      const tmpConfigPath = path.join('/tmp', `codex-config-${Date.now()}.toml`);
+      const configContent = `experimental_use_rmcp_client = true
+
+[mcp_servers.github]
+url = "https://api.githubcopilot.com/mcp/"
+bearer_token = "${githubToken}"
+`;
+
+      await fs.writeFile(tmpConfigPath, configContent);
+
       const codexArgs = [
         'exec',
         '--full-auto',
         '--skip-git-repo-check',
         '--model', this.options.model,
-        '--config', 'experimental_use_rmcp_client=true',
-        '--config', `mcp_servers.github.url="https://api.githubcopilot.com/mcp/"`,
-        '--config', `mcp_servers.github.bearer_token="${githubToken}"`,
+        '--config', `config_file="${tmpConfigPath}"`,
         '--',
         prompt
       ];
 
       Logger.debug(`Running: codex ${codexArgs.join(' ')}`);
+      Logger.debug(`Config file: ${tmpConfigPath}`);
 
       spinner.stop();
       Logger.info('Starting Codex review...');
@@ -237,18 +247,32 @@ export class AILinter {
 
         let wasInterrupted = false;
 
-        const cleanup = () => {
+        const cleanup = async () => {
           wasInterrupted = true;
           if (codexProcess && !codexProcess.killed)
             codexProcess.kill('SIGTERM');
+
+          // Clean up temp config file
+          try {
+            await fs.remove(tmpConfigPath);
+          } catch (err) {
+            Logger.debug(`Failed to remove temp config: ${err.message}`);
+          }
         };
 
         process.on('SIGINT', cleanup);
         process.on('SIGTERM', cleanup);
 
-        codexProcess.on('close', (code, signal) => {
+        codexProcess.on('close', async (code, signal) => {
           process.removeListener('SIGINT', cleanup);
           process.removeListener('SIGTERM', cleanup);
+
+          // Clean up temp config file
+          try {
+            await fs.remove(tmpConfigPath);
+          } catch (err) {
+            Logger.debug(`Failed to remove temp config: ${err.message}`);
+          }
 
           if (wasInterrupted || signal === 'SIGTERM' || signal === 'SIGINT') {
             Logger.warning('Codex review interrupted by user');
@@ -262,9 +286,16 @@ export class AILinter {
           }
         });
 
-        codexProcess.on('error', (error) => {
+        codexProcess.on('error', async (error) => {
           process.removeListener('SIGINT', cleanup);
           process.removeListener('SIGTERM', cleanup);
+
+          // Clean up temp config file
+          try {
+            await fs.remove(tmpConfigPath);
+          } catch (err) {
+            Logger.debug(`Failed to remove temp config: ${err.message}`);
+          }
 
           Logger.error(`Failed to run Codex: ${error.message}`);
           reject(error);
