@@ -26,7 +26,7 @@ export class AILinter {
       workingDir: process.cwd(),
       verbose: options.verbose || false,
       dryRun: options.dryRun || false,
-      model: options.model || 'o4-mini'
+      model: options.model || 'gpt-5-codex'
     };
 
     Logger.debug(`Working directory: ${this.options.workingDir}`);
