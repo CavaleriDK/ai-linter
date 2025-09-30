@@ -38,9 +38,9 @@ export class AILinter {
   }
 
   #checkDependencies() {
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.AI_LINTER_OPENAI_KEY) {
       Logger.error('Please set your OpenAI API key:');
-      Logger.info('  export OPENAI_API_KEY="your-api-key-here"');
+      Logger.info('  export AI_LINTER_OPENAI_KEY="your-api-key-here"');
       process.exit(1);
     }
 
@@ -146,7 +146,7 @@ export class AILinter {
   }
 
   async #authenticateCodex() {
-    const openAiToken = process.env.OPENAI_API_KEY;
+    const openAiToken = process.env.AI_LINTER_OPENAI_KEY;
 
     const codexArgs = [
       'login',

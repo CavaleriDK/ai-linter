@@ -46,7 +46,7 @@ jobs:
       - name: Run AI Linter
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_LINTER_OPENAI_KEY: ${{ secrets.AI_LINTER_OPENAI_KEY }}
         working-directory: ${{ github.workspace }}
         run: |
           ai-linter \

@@ -96,7 +96,7 @@ AI Linter works best as a GitHub App that automatically reviews PRs. See the [Gi
 Add these secrets to your repository (Settings → Secrets → Actions):
 - `AI_LINTER_APP_ID`: Your GitHub App's ID or Client ID (found on app settings page)
 - `AI_LINTER_PRIVATE_KEY`: Contents of the `.pem` file
-- `OPENAI_API_KEY`: Your OpenAI API key
+- `AI_LINTER_OPENAI_KEY`: Your OpenAI API key
 
 ### Step 5: Add GitHub Actions Workflow
 
@@ -149,7 +149,7 @@ jobs:
       - name: Run AI Linter
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_LINTER_OPENAI_KEY: ${{ secrets.AI_LINTER_OPENAI_KEY }}
         run: |
           ai-linter \
             --repo-owner ${{ github.repository_owner }} \
@@ -172,7 +172,7 @@ Common locations checked:
 
 ### Environment Variables
 
-- `OPENAI_API_KEY`: Required - Your OpenAI API key
+- `AI_LINTER_OPENAI_KEY`: Required - Your OpenAI API key
 - `GITHUB_TOKEN`: GitHub App installation token (provided by GitHub Actions)
 - `GITHUB_PERSONAL_ACCESS_TOKEN`: Alternative to GitHub App token for local development
 
