@@ -64,6 +64,7 @@ export class AILinter {
       Logger.debug(`Rules file: ${rulesPath}`);
       Logger.debug(`PR info: ${JSON.stringify(prInfo)}`);
 
+      await this.#authenticateCodex();
       await this.#runCodexReview(rulesPath, prInfo);
 
     } catch (error) {
