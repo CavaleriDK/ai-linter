@@ -212,9 +212,10 @@ export class AILinter {
 
       const githubToken = process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 
+      // Resolve GitHub MCP path from the bin directory where ai-linter is installed
+      // __dirname is bin/src, so go up to bin, then to github-mcp
       const githubMCPPath = path.resolve(
-        path.dirname(path.dirname(__dirname)),
-        'bin',
+        path.dirname(__dirname),
         'github-mcp',
         process.platform === 'win32' ? 'github-mcp-server.exe' : 'github-mcp-server'
       );
