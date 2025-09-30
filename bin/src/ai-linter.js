@@ -144,6 +144,66 @@ export class AILinter {
     };
   }
 
+  async #authenticateCodex() {
+    const openAiToken = process.env.OPENAI_API_KEY;
+
+    const codexBin = path.resolve(
+      path.dirname(path.dirname(__dirname)),
+      'node_modules',
+      '@openai',
+      'codex',
+      'bin',
+      'codex.js'
+    );
+    
+    const codexArgs = [
+      'login',
+      '--api-key', `"${openAiToken}"`
+    ];
+
+    return await new Promise((resolve, reject) => {
+      const codexProcess = spawn(process.execPath, [codexBin, ...codexArgs], {
+        stdio: 'inherit',
+        shell: false
+      });
+
+      let wasInterrupted = false;
+
+      const cleanup = () => {
+        wasInterrupted = true;
+        if (codexProcess && !codexProcess.killed)
+          codexProcess.kill('SIGTERM');
+      };
+
+      process.on('SIGINT', cleanup);
+      process.on('SIGTERM', cleanup);
+
+      codexProcess.on('close', (code, signal) => {
+        process.removeListener('SIGINT', cleanup);
+        process.removeListener('SIGTERM', cleanup);
+
+        if (wasInterrupted || signal === 'SIGTERM' || signal === 'SIGINT') {
+          Logger.warning('Codex login interrupted by user');
+          reject(new Error('Process was interrupted'));
+        } else if (code === 0) {
+          Logger.success('Codex login completed successfully');
+          resolve();
+        } else {
+          Logger.error(`Codex review failed with exit code ${code}`);
+          reject(new Error(`Codex exited with code ${code}`));
+        }
+      });
+
+      codexProcess.on('error', (error) => {
+        process.removeListener('SIGINT', cleanup);
+        process.removeListener('SIGTERM', cleanup);
+
+        Logger.error(`Failed to run Codex: ${error.message}`);
+        reject(error);
+      });
+    });
+  }
+
   async #runCodexReview(rulesPath, prInfo) {
     const spinner = ora('Running Codex AI review...').start();
 
