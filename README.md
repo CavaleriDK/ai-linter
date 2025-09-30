@@ -45,7 +45,7 @@ ai-linter --repo-owner myorg --repo-name myrepo --pr 123
 # Review with custom style guidelines
 ai-linter --repo-owner myorg --repo-name myrepo --pr 123 --rules ./docs/STYLE-GUIDE.md
 
-# Review with a specific model (default: o4-mini)
+# Review with a specific model (default: gpt-5-codex)
 ai-linter --repo-owner myorg --repo-name myrepo --pr 123 --model o1-preview
 
 # Dry run (show what would be reviewed)
@@ -184,7 +184,7 @@ Common locations checked:
 | `--pr <number>` | `-p` | Pull Request number to review | - |
 | `--base <ref>` | `-b` | Base branch for comparison | `main` |
 | `--head <ref>` | `-h` | Head branch for comparison | Current branch |
-| `--model <name>` | `-m` | OpenAI model to use | `o4-mini` |
+| `--model <name>` | `-m` | OpenAI model to use | `gpt-5-codex` |
 | `--repo-owner <owner>` | `-o` | GitHub repository owner | Auto-detected |
 | `--repo-name <name>` | `-n` | GitHub repository name | Auto-detected |
 | `--dry-run` | - | Show what would be done without executing | `false` |
