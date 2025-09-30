@@ -1,7 +1,7 @@
 import ora from 'ora';
 import path from 'path';
 import fs from 'fs-extra';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import simpleGit from 'simple-git';
 import { fileURLToPath } from 'url';
 import { defaultStyleRules } from './default-style-rules.js';
@@ -212,10 +212,19 @@ export class AILinter {
 
       const githubToken = process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 
-      // Resolve GitHub MCP path from the bin directory where ai-linter is installed
-      // __dirname is bin/src, so go up to bin, then to github-mcp
-      const githubMCPPath = path.resolve(
-        path.dirname(__dirname),
+      // Find the global installation path of ai-linter-cli
+      let globalPackagePath;
+      try {
+        const npmRoot = execSync('npm root -g', { encoding: 'utf8' }).trim();
+        globalPackagePath = path.join(npmRoot, 'ai-linter-cli');
+      } catch (error) {
+        // Fallback to relative path if npm root fails
+        globalPackagePath = path.dirname(path.dirname(__dirname));
+      }
+
+      const githubMCPPath = path.join(
+        globalPackagePath,
+        'bin',
         'github-mcp',
         process.platform === 'win32' ? 'github-mcp-server.exe' : 'github-mcp-server'
       );
