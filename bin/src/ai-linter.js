@@ -218,8 +218,8 @@ export class AILinter {
         '--skip-git-repo-check',
         '--model', this.options.model,
         '--config', 'experimental_use_rmcp_client=true',
-        '--config', `mcp_servers.github.url='"https://api.githubcopilot.com/mcp/"'`,
-        '--config', `mcp_servers.github.bearer_token='"${githubToken}"'`,
+        '--config', `mcp_servers.github.url="https://api.githubcopilot.com/mcp/"`,
+        '--config', `mcp_servers.github.bearer_token="${githubToken}"`,
         '--',
         prompt
       ];
