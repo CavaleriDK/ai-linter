@@ -25,7 +25,18 @@ AI-powered code linter using OpenAI Codex CLI with GitHub MCP integration for in
 npm install -g ai-linter-cli
 ```
 
-The GitHub MCP Server v0.10.0 will be automatically built during installation.
+After installation, you need to install OpenAI Codex globally and build the GitHub MCP Server:
+
+```bash
+# Navigate to the global installation directory
+cd $(npm root -g)/ai-linter-cli
+
+# Install OpenAI Codex globally
+npm run install:codex
+
+# Build GitHub MCP Server
+npm run build:github-mcp
+```
 
 ## Usage
 
@@ -132,12 +143,14 @@ jobs:
       - name: Install AI Linter
         run: npm install -g ai-linter-cli
 
+      - name: Install Codex
+        run: |
+          cd $(npm root -g)/ai-linter-cli
+          npm run install:codex
+
       - name: Build GitHub MCP Server
         run: |
-          # Find where ai-linter-cli was installed globally
           cd $(npm root -g)/ai-linter-cli
-          
-          # Run the build script from the global installation
           npm run build:github-mcp
 
       - name: Generate GitHub App Token

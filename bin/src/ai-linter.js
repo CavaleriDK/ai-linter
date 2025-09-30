@@ -148,22 +148,13 @@ export class AILinter {
   async #authenticateCodex() {
     const openAiToken = process.env.OPENAI_API_KEY;
 
-    const codexBin = path.resolve(
-      path.dirname(path.dirname(__dirname)),
-      'node_modules',
-      '@openai',
-      'codex',
-      'bin',
-      'codex.js'
-    );
-    
     const codexArgs = [
       'login',
       '--api-key', `"${openAiToken}"`
     ];
 
     return await new Promise((resolve, reject) => {
-      const codexProcess = spawn(process.execPath, [codexBin, ...codexArgs], {
+      const codexProcess = spawn('codex', codexArgs, {
         stdio: 'inherit',
         shell: false
       });
@@ -219,15 +210,6 @@ export class AILinter {
         return;
       }
 
-      const codexBin = path.resolve(
-        path.dirname(path.dirname(__dirname)),
-        'node_modules',
-        '@openai',
-        'codex',
-        'bin',
-        'codex.js'
-      );
-
       const githubToken = process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 
       const githubMCPPath = path.resolve(
@@ -261,7 +243,7 @@ export class AILinter {
       Logger.info('Starting Codex review...');
 
       return await new Promise((resolve, reject) => {
-        const codexProcess = spawn(process.execPath, [codexBin, ...codexArgs], {
+        const codexProcess = spawn('codex', codexArgs, {
           stdio: 'inherit',
           shell: false
         });
