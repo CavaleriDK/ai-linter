@@ -147,53 +147,19 @@ export class AILinter {
 
   async #authenticateCodex() {
     const openAiToken = process.env.AI_LINTER_OPENAI_KEY;
+    const codexDir = path.join(require('os').homedir(), '.codex');
+    const authPath = path.join(codexDir, 'auth.json');
 
-    const codexArgs = [
-      'login',
-      '--api-key', `"${openAiToken}"`
-    ];
-
-    return await new Promise((resolve, reject) => {
-      const codexProcess = spawn('codex', codexArgs, {
-        stdio: 'inherit',
-        shell: false
+    try {
+      await fs.ensureDir(codexDir);
+      await fs.writeJson(authPath, {
+        OPENAI_API_KEY: openAiToken
       });
-
-      let wasInterrupted = false;
-
-      const cleanup = () => {
-        wasInterrupted = true;
-        if (codexProcess && !codexProcess.killed)
-          codexProcess.kill('SIGTERM');
-      };
-
-      process.on('SIGINT', cleanup);
-      process.on('SIGTERM', cleanup);
-
-      codexProcess.on('close', (code, signal) => {
-        process.removeListener('SIGINT', cleanup);
-        process.removeListener('SIGTERM', cleanup);
-
-        if (wasInterrupted || signal === 'SIGTERM' || signal === 'SIGINT') {
-          Logger.warning('Codex login interrupted by user');
-          reject(new Error('Process was interrupted'));
-        } else if (code === 0) {
-          Logger.success('Codex login completed successfully');
-          resolve();
-        } else {
-          Logger.error(`Codex review failed with exit code ${code}`);
-          reject(new Error(`Codex exited with code ${code}`));
-        }
-      });
-
-      codexProcess.on('error', (error) => {
-        process.removeListener('SIGINT', cleanup);
-        process.removeListener('SIGTERM', cleanup);
-
-        Logger.error(`Failed to run Codex: ${error.message}`);
-        reject(error);
-      });
-    });
+      Logger.success('Codex authentication configured');
+    } catch (error) {
+      Logger.error(`Failed to configure Codex authentication: ${error.message}`);
+      throw error;
+    }
   }
 
   async #runCodexReview(rulesPath, prInfo) {
