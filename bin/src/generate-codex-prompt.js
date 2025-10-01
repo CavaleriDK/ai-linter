@@ -1,6 +1,4 @@
 export function generateCodexPrompt(rulesPath, prInfo) {
-  return "List the MCP tools you have at your disposal."
-
   const prompt = `You are an AI code linter reviewing a Pull Request. 
 
 Now, perform the following tasks in order:
