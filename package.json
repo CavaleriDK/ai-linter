@@ -10,6 +10,7 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "build:github-mcp": "node scripts/build-github-mcp.js",
     "install:codex": "node scripts/install-codex.js"
   },
   "engines": {

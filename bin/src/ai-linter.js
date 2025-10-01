@@ -179,26 +179,26 @@ export class AILinter {
 
       const githubToken = process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 
-      // Create a temporary config file for this run
-      const tmpConfigPath = path.join('/tmp', `codex-config-${Date.now()}.toml`);
+      const githubMCPPath = path.resolve(
+        path.dirname(path.dirname(__dirname)),
+        'bin',
+        'github-mcp',
+        process.platform === 'win32' ? 'github-mcp-server.exe' : 'github-mcp-server'
+      );
 
-      const configContent = `
-[mcp_servers.github]
-url = "https://api.githubcopilot.com/mcp/"
-
-[mcp_servers.github.headers]
-Authorization = "Bearer ${githubToken}"
-`;
-
-      await fs.writeFile(tmpConfigPath, configContent);
+      if (!await fs.pathExists(githubMCPPath)) {
+        Logger.error(`GitHub MCP Server not found at: ${  githubMCPPath}`);
+        Logger.info('Please run: npm run build:github-mcp');
+        process.exit(1);
+      }
 
       const codexArgs = [
         'exec',
         '--full-auto',
         '--skip-git-repo-check',
         '--model', this.options.model,
-        '--config', 'mcp_servers.github.command="docker"',
-        '--config', 'mcp_servers.github.args=["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"]',
+        '--config', `mcp_servers.github.command="${githubMCPPath}"`,
+        '--config', 'mcp_servers.github.args=["stdio"]',
         '--config', `mcp_servers.github.env={GITHUB_PERSONAL_ACCESS_TOKEN="${githubToken}"}`,
         '--',
         prompt
