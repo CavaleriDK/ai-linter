@@ -33,7 +33,7 @@ jobs:
           node-version: '22'
 
       - name: Install Codex
-        run: npm install -g @openai/openai-codex@0.42.0
+        run: npm install -g @openai/codex@0.42.0
 
       - name: Generate GitHub App Token
         id: generate_token
