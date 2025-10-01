@@ -10,7 +10,8 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build:github-mcp": "node scripts/build-github-mcp.js"
+    "build:github-mcp": "node scripts/build-github-mcp.js",
+    "install:codex": "node scripts/install-codex.js"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -27,7 +28,6 @@
   "author": "Michael Cavaleri",
   "license": "MIT",
   "dependencies": {
-    "@openai/codex": "^0.23.0",
     "chalk": "^5.4.1",
     "commander": "^14.0.0",
     "fs-extra": "^11.3.0",

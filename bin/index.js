@@ -24,7 +24,7 @@ program
   .option('-p, --pr <number>', 'Pull Request number to review')
   .option('-b, --base <ref>', 'Base branch for comparison', 'main')
   .option('-h, --head <ref>', 'Head branch for comparison')
-  .option('-m, --model <name>', 'OpenAI model to use', 'o4-mini')
+  .option('-m, --model <name>', 'OpenAI model to use', 'gpt-5-codex')
   .option('-o, --repo-owner <owner>', 'GitHub repository owner')
   .option('-n, --repo-name <name>', 'GitHub repository name')
   .option('--dry-run', 'Show what would be done without executing')

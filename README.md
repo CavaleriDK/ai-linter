@@ -25,7 +25,25 @@ AI-powered code linter using OpenAI Codex CLI with GitHub MCP integration for in
 npm install -g ai-linter-cli
 ```
 
-The GitHub MCP Server v0.10.0 will be automatically built during installation.
+After installation, you need to install OpenAI Codex globally:
+
+```bash
+# Navigate to the global installation directory
+cd $(npm root -g)/ai-linter-cli
+
+# Install OpenAI Codex globally
+npm run install:codex
+```
+
+Finally, you need to build the Github MCP locally:
+
+```bash
+# Navigate to the global installation directory
+cd $(npm root -g)/ai-linter-cli
+
+# Build the MCP from source
+npm run build:github-mcp
+```
 
 ## Usage
 
@@ -38,7 +56,7 @@ ai-linter --repo-owner myorg --repo-name myrepo --pr 123
 # Review with custom style guidelines
 ai-linter --repo-owner myorg --repo-name myrepo --pr 123 --rules ./docs/STYLE-GUIDE.md
 
-# Review with a specific model (default: o4-mini)
+# Review with a specific model (default: gpt-5-codex)
 ai-linter --repo-owner myorg --repo-name myrepo --pr 123 --model o1-preview
 
 # Dry run (show what would be reviewed)
@@ -89,7 +107,7 @@ AI Linter works best as a GitHub App that automatically reviews PRs. See the [Gi
 Add these secrets to your repository (Settings → Secrets → Actions):
 - `AI_LINTER_APP_ID`: Your GitHub App's ID or Client ID (found on app settings page)
 - `AI_LINTER_PRIVATE_KEY`: Contents of the `.pem` file
-- `OPENAI_API_KEY`: Your OpenAI API key
+- `AI_LINTER_OPENAI_KEY`: Your OpenAI API key
 
 ### Step 5: Add GitHub Actions Workflow
 
@@ -124,21 +142,18 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-
       - name: Install AI Linter
         run: npm install -g ai-linter-cli
 
       - name: Build GitHub MCP Server
         run: |
-          # Find where ai-linter-cli was installed globally
           cd $(npm root -g)/ai-linter-cli
-          
-          # Run the build script from the global installation
           npm run build:github-mcp
+
+      - name: Install Codex
+        run: |
+          cd $(npm root -g)/ai-linter-cli
+          npm run install:codex
 
       - name: Generate GitHub App Token
         id: generate_token
@@ -150,7 +165,8 @@ jobs:
       - name: Run AI Linter
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_LINTER_OPENAI_KEY: ${{ secrets.AI_LINTER_OPENAI_KEY }}
+        working-directory: ${{ github.workspace }}
         run: |
           ai-linter \
             --repo-owner ${{ github.repository_owner }} \
@@ -173,7 +189,7 @@ Common locations checked:
 
 ### Environment Variables
 
-- `OPENAI_API_KEY`: Required - Your OpenAI API key
+- `AI_LINTER_OPENAI_KEY`: Required - Your OpenAI API key
 - `GITHUB_TOKEN`: GitHub App installation token (provided by GitHub Actions)
 - `GITHUB_PERSONAL_ACCESS_TOKEN`: Alternative to GitHub App token for local development
 
@@ -185,7 +201,7 @@ Common locations checked:
 | `--pr <number>` | `-p` | Pull Request number to review | - |
 | `--base <ref>` | `-b` | Base branch for comparison | `main` |
 | `--head <ref>` | `-h` | Head branch for comparison | Current branch |
-| `--model <name>` | `-m` | OpenAI model to use | `o4-mini` |
+| `--model <name>` | `-m` | OpenAI model to use | `gpt-5-codex` |
 | `--repo-owner <owner>` | `-o` | GitHub repository owner | Auto-detected |
 | `--repo-name <name>` | `-n` | GitHub repository name | Auto-detected |
 | `--dry-run` | - | Show what would be done without executing | `false` |
