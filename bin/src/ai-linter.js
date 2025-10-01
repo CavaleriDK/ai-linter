@@ -181,11 +181,13 @@ export class AILinter {
 
       // Create a temporary config file for this run
       const tmpConfigPath = path.join('/tmp', `codex-config-${Date.now()}.toml`);
-      const configContent = `experimental_use_rmcp_client = true
 
+      const configContent = `
 [mcp_servers.github]
 url = "https://api.githubcopilot.com/mcp/"
-bearer_token = "${githubToken}"
+
+[mcp_servers.github.headers]
+Authorization = "Bearer ${githubToken}"
 `;
 
       await fs.writeFile(tmpConfigPath, configContent);
