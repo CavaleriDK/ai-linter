@@ -16,7 +16,7 @@ program
   .name('ai-linter')
   .description('AI-powered code linter using OpenAI Codex CLI')
   .version(packageJson.version);
-
+ 
 // Default command is review
 program
   .description('Review code changes against style guidelines')
