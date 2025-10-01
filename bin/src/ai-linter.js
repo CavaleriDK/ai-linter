@@ -1,6 +1,7 @@
 import ora from 'ora';
 import path from 'path';
 import fs from 'fs-extra';
+import os from 'os';
 import { spawn } from 'child_process';
 import simpleGit from 'simple-git';
 import { fileURLToPath } from 'url';
@@ -147,7 +148,7 @@ export class AILinter {
 
   async #authenticateCodex() {
     const openAiToken = process.env.AI_LINTER_OPENAI_KEY;
-    const codexDir = path.join(require('os').homedir(), '.codex');
+    const codexDir = path.join(os.homedir(), '.codex');
     const authPath = path.join(codexDir, 'auth.json');
 
     try {
