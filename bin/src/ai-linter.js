@@ -193,15 +193,16 @@ Authorization = "Bearer ${githubToken}"
       await fs.writeFile(tmpConfigPath, configContent);
 
       const codexArgs = [
-      'exec',
-      '--full-auto',
-      '--skip-git-repo-check',
-      '--model', this.options.model,
-      '--config', 'mcp_servers.github.url="https://api.githubcopilot.com/mcp/"',
-      '--config', `mcp_servers.github.headers={Authorization="Bearer ${githubToken}"}`,
-      '--',
-      prompt
-    ];
+        'exec',
+        '--full-auto',
+        '--skip-git-repo-check',
+        '--model', this.options.model,
+        '--config', 'mcp_servers.github.command="docker"',
+        '--config', 'mcp_servers.github.args=["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"]',
+        '--config', `mcp_servers.github.env={GITHUB_PERSONAL_ACCESS_TOKEN="${githubToken}"}`,
+        '--',
+        prompt
+      ];
 
       Logger.debug(`Running: codex ${codexArgs.join(' ')}`);
       Logger.debug(`Config file: ${tmpConfigPath}`);
