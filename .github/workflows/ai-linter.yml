@@ -26,6 +26,11 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
       - name: Install AI Linter
         run: |-
           npm install

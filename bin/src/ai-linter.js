@@ -65,7 +65,6 @@ export class AILinter {
       Logger.debug(`Rules file: ${rulesPath}`);
       Logger.debug(`PR info: ${JSON.stringify(prInfo)}`);
 
-      await this.#authenticateCodex();
       await this.#runCodexReview(rulesPath, prInfo);
 
     } catch (error) {
@@ -146,23 +145,6 @@ export class AILinter {
     };
   }
 
-  async #authenticateCodex() {
-    const openAiToken = process.env.AI_LINTER_OPENAI_KEY;
-    const codexDir = path.join(os.homedir(), '.codex');
-    const authPath = path.join(codexDir, 'auth.json');
-
-    try {
-      await fs.ensureDir(codexDir);
-      await fs.writeJson(authPath, {
-        OPENAI_API_KEY: openAiToken
-      });
-      Logger.success('Codex authentication configured');
-    } catch (error) {
-      Logger.error(`Failed to configure Codex authentication: ${error.message}`);
-      throw error;
-    }
-  }
-
   async #runCodexReview(rulesPath, prInfo) {
     const spinner = ora('Running Codex AI review...').start();
 
@@ -217,7 +199,7 @@ export class AILinter {
 
         let wasInterrupted = false;
 
-        const cleanup = async () => {
+        const cleanup = () => {
           wasInterrupted = true;
           if (codexProcess && !codexProcess.killed)
             codexProcess.kill('SIGTERM');
@@ -226,7 +208,7 @@ export class AILinter {
         process.on('SIGINT', cleanup);
         process.on('SIGTERM', cleanup);
 
-        codexProcess.on('close', async (code, signal) => {
+        codexProcess.on('close', (code, signal) => {
           process.removeListener('SIGINT', cleanup);
           process.removeListener('SIGTERM', cleanup);
 
@@ -242,7 +224,7 @@ export class AILinter {
           }
         });
 
-        codexProcess.on('error', async (error) => {
+        codexProcess.on('error', (error) => {
           process.removeListener('SIGINT', cleanup);
           process.removeListener('SIGTERM', cleanup);
 
