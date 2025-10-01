@@ -16,6 +16,12 @@ jobs:
   ai-lint:
     runs-on: ubuntu-latest
     steps:
+      - name: Change DNS to Cloudflare
+        run: |
+          sudo sed -i 's/nameserver.*/nameserver 1.1.1.1/' /etc/resolv.conf
+          echo "nameserver 1.1.1.2" | sudo tee -a /etc/resolv.conf
+          cat /etc/resolv.conf
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
