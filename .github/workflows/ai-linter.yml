@@ -26,11 +26,6 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-
       - name: Install AI Linter
         run: |-
           npm install
@@ -40,6 +35,11 @@ jobs:
         run: |
           cd $(npm root -g)/ai-linter-cli
           npm run build:github-mcp
+
+      - name: Install Codex
+        run: |
+          cd $(npm root -g)/ai-linter-cli
+          npm run install:codex
 
       - name: Generate GitHub App Token
         id: generate_token
@@ -51,7 +51,8 @@ jobs:
       - name: Run AI Linter
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_LINTER_OPENAI_KEY: ${{ secrets.AI_LINTER_OPENAI_KEY }}
+        working-directory: ${{ github.workspace }}
         run: |
           ai-linter \
             --repo-owner ${{ github.repository_owner }} \

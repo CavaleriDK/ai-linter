@@ -1,6 +1,7 @@
 import ora from 'ora';
 import path from 'path';
 import fs from 'fs-extra';
+import os from 'os';
 import { spawn } from 'child_process';
 import simpleGit from 'simple-git';
 import { fileURLToPath } from 'url';
@@ -26,7 +27,7 @@ export class AILinter {
       workingDir: process.cwd(),
       verbose: options.verbose || false,
       dryRun: options.dryRun || false,
-      model: options.model || 'o4-mini'
+      model: options.model || 'gpt-5-codex'
     };
 
     Logger.debug(`Working directory: ${this.options.workingDir}`);
@@ -38,9 +39,9 @@ export class AILinter {
   }
 
   #checkDependencies() {
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.AI_LINTER_OPENAI_KEY) {
       Logger.error('Please set your OpenAI API key:');
-      Logger.info('  export OPENAI_API_KEY="your-api-key-here"');
+      Logger.info('  export AI_LINTER_OPENAI_KEY="your-api-key-here"');
       process.exit(1);
     }
 
@@ -64,6 +65,7 @@ export class AILinter {
       Logger.debug(`Rules file: ${rulesPath}`);
       Logger.debug(`PR info: ${JSON.stringify(prInfo)}`);
 
+      await this.#authenticateCodex();
       await this.#runCodexReview(rulesPath, prInfo);
 
     } catch (error) {
@@ -144,6 +146,23 @@ export class AILinter {
     };
   }
 
+  async #authenticateCodex() {
+    const openAiToken = process.env.AI_LINTER_OPENAI_KEY;
+    const codexDir = path.join(os.homedir(), '.codex');
+    const authPath = path.join(codexDir, 'auth.json');
+
+    try {
+      await fs.ensureDir(codexDir);
+      await fs.writeJson(authPath, {
+        OPENAI_API_KEY: openAiToken
+      });
+      Logger.success('Codex authentication configured');
+    } catch (error) {
+      Logger.error(`Failed to configure Codex authentication: ${error.message}`);
+      throw error;
+    }
+  }
+
   async #runCodexReview(rulesPath, prInfo) {
     const spinner = ora('Running Codex AI review...').start();
 
@@ -157,15 +176,6 @@ export class AILinter {
         Logger.info('─'.repeat(50));
         return;
       }
-
-      const codexBin = path.resolve(
-        path.dirname(path.dirname(__dirname)),
-        'node_modules',
-        '@openai',
-        'codex',
-        'bin',
-        'codex.js'
-      );
 
       const githubToken = process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 
@@ -200,7 +210,7 @@ export class AILinter {
       Logger.info('Starting Codex review...');
 
       return await new Promise((resolve, reject) => {
-        const codexProcess = spawn(process.execPath, [codexBin, ...codexArgs], {
+        const codexProcess = spawn('codex', codexArgs, {
           stdio: 'inherit',
           shell: false
         });

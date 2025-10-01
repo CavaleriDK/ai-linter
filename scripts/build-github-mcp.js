@@ -9,7 +9,7 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const GITHUB_MCP_VERSION = 'v0.10.0';
+const GITHUB_MCP_VERSION = 'v0.16.0';
 const REPO_URL = 'https://github.com/github/github-mcp-server.git';
 const BUILD_DIR = join(__dirname, '..', '.github-mcp-build');
 const OUTPUT_DIR = join(__dirname, '..', 'bin', 'github-mcp');
