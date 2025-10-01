@@ -205,7 +205,6 @@ export class AILinter {
       ];
 
       Logger.debug(`Running: codex ${codexArgs.join(' ')}`);
-      Logger.debug(`Config file: ${tmpConfigPath}`);
 
       spinner.stop();
       Logger.info('Starting Codex review...');
@@ -222,13 +221,6 @@ export class AILinter {
           wasInterrupted = true;
           if (codexProcess && !codexProcess.killed)
             codexProcess.kill('SIGTERM');
-
-          // Clean up temp config file
-          try {
-            await fs.remove(tmpConfigPath);
-          } catch (err) {
-            Logger.debug(`Failed to remove temp config: ${err.message}`);
-          }
         };
 
         process.on('SIGINT', cleanup);
@@ -237,13 +229,6 @@ export class AILinter {
         codexProcess.on('close', async (code, signal) => {
           process.removeListener('SIGINT', cleanup);
           process.removeListener('SIGTERM', cleanup);
-
-          // Clean up temp config file
-          try {
-            await fs.remove(tmpConfigPath);
-          } catch (err) {
-            Logger.debug(`Failed to remove temp config: ${err.message}`);
-          }
 
           if (wasInterrupted || signal === 'SIGTERM' || signal === 'SIGINT') {
             Logger.warning('Codex review interrupted by user');
@@ -260,13 +245,6 @@ export class AILinter {
         codexProcess.on('error', async (error) => {
           process.removeListener('SIGINT', cleanup);
           process.removeListener('SIGTERM', cleanup);
-
-          // Clean up temp config file
-          try {
-            await fs.remove(tmpConfigPath);
-          } catch (err) {
-            Logger.debug(`Failed to remove temp config: ${err.message}`);
-          }
 
           Logger.error(`Failed to run Codex: ${error.message}`);
           reject(error);
