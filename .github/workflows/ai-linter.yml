@@ -62,9 +62,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           AI_LINTER_OPENAI_KEY: ${{ secrets.AI_LINTER_OPENAI_KEY }}
         run: |
-          codex login --api-key "$AI_LINTER_OPENAI_KEY"
-
-          # Create temporary Codex config with GitHub MCP
+          # Create temporary Codex config with GitHub MCP and auth
           CONFIG_FILE=$(mktemp)
           cat > "$CONFIG_FILE" << EOF
           experimental_use_rmcp_client = true
@@ -72,6 +70,14 @@ jobs:
           [mcp_servers.github]
           url = "https://api.githubcopilot.com/mcp/"
           bearer_token = "$GITHUB_TOKEN"
+          EOF
+
+          # Create auth.json file
+          mkdir -p ~/.codex
+          cat > ~/.codex/auth.json << EOF
+          {
+            "OPENAI_API_KEY": "$AI_LINTER_OPENAI_KEY"
+          }
           EOF
 
           # Generate the prompt
@@ -136,4 +142,4 @@ jobs:
             "$(cat /tmp/codex_prompt.txt)"
 
           # Cleanup
-          rm -f "$CONFIG_FILE" /tmp/codex_prompt.txt 
+          rm -f "$CONFIG_FILE" /tmp/codex_prompt.txt ~/.codex/auth.json 
