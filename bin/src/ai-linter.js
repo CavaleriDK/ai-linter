@@ -65,6 +65,7 @@ export class AILinter {
       Logger.debug(`Rules file: ${rulesPath}`);
       Logger.debug(`PR info: ${JSON.stringify(prInfo)}`);
 
+      await this.#authenticateCodex();
       await this.#runCodexReview(rulesPath, prInfo);
 
     } catch (error) {
@@ -143,6 +144,23 @@ export class AILinter {
       repoOwner: this.options.repoOwner,
       repoName: this.options.repoName
     };
+  }
+
+  async #authenticateCodex() {
+    const openAiToken = process.env.AI_LINTER_OPENAI_KEY;
+    const codexDir = path.join(os.homedir(), '.codex');
+    const authPath = path.join(codexDir, 'auth.json');
+
+    try {
+      await fs.ensureDir(codexDir);
+      await fs.writeJson(authPath, {
+        OPENAI_API_KEY: openAiToken
+      });
+      Logger.success('Codex authentication configured');
+    } catch (error) {
+      Logger.error(`Failed to configure Codex authentication: ${error.message}`);
+      throw error;
+    }
   }
 
   async #runCodexReview(rulesPath, prInfo) {
