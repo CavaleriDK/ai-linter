@@ -32,7 +32,6 @@ Your tasks includes the following rules:
   - For each issue, specify:
     - The file and line number
     - Which style rule is violated
-    - A clear explanation of the issue
     - Suggested fix if applicable
   - NEVER include emojies in your review comments
   - If you find no issues, update the body of the PR review saying the PR looks good from a style perspective.
